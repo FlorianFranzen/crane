@@ -41,9 +41,15 @@ runCommandLocal "cargo-git" deps ''
         continue
       fi
 
+      local src="$(dirname "$cargoToml")"
       local dest="$out/$crate"
-      cp -r "$(dirname "$cargoToml")" "$dest"
-      chmod +w "$dest"
+
+      cp -r "$src" "$dest"
+
+      chmod -R +w "$dest"     
+      for link in $(cd $src && find -type l); do
+        rm "$dest/$link" && cp -r "$(readlink -f "$src/$link")" "$dest/$link"
+      done
       echo '{"files":{}, "package":null}' > "$dest/.cargo-checksum.json"
 
       crane-resolve-workspace-inheritance "$cargoToml" > "$dest/Cargo.toml.resolved" &&
